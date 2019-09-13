@@ -1,3 +1,5 @@
+##This is my attempt at modifying NbCluster.
+## It is just experimental. Don't use it.
 Package: NbClust
 Type: Package
 Title: Determining the Best Number of Clusters in a Data Set
@@ -14,3 +16,4 @@ Packaged: 2015-04-13 13:57:52 UTC; toshiba
 NeedsCompilation: no
 Repository: CRAN
 Date/Publication: 2015-04-13 22:54:43
+ 

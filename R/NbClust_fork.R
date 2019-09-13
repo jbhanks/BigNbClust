@@ -4,6 +4,7 @@ NbC <-function(data = NULL, diss=NULL, distance ="euclidean", min.nc=2, max.nc=1
   require(propagate)
   require(fastcluster)
   print("starting NbCluster!")
+  print(dim(data))
     x<-0
     min_nc <- min.nc
     max_nc <- max.nc
@@ -1237,13 +1238,35 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
                 else stop("Wrong clustering method")
                 if (ClassNr > 1) {
                   for (zz in (1:ClassNr)) {
+                    print(zz)
                     Xuse <- X[pp == zz, ]
                     Wk0 <- Wk0 + sum(diag(var(Xuse))) * (length(pp[pp == 
                       zz]) - 1)/(dim(X)[1] - ClassNr)
                     Xuse2 <- Xnew[pp2 == zz, ]
-                    WkB[1, bb] <- WkB[1, bb] + sum(diag(cova(Xuse2))) * 
-                      (length(pp2[pp2 == zz]) - 1)/(dim(X)[1] - 
-                      ClassNr)
+                    #This is in here because I had problems when Xuse2 was a vector rather than a matrix.
+                    if(is.vector(Xuse2)){
+                      browser()
+                        print("This is a 1D vector")
+                        tryCatch(
+                          {cova(Xuse2)},
+                          error = function(Xuse2){
+                            save(list=c(X = "X", Xuse = "Xuse", Xuse2 = "Xuse2", Xnew="Xnew", pp="pp", pp2="pp2", zz="zz", Wk0="Wk0", ClassNr="ClassNr"), file = "Xuse.objs.Rdata")
+                          }
+                        )
+                      next
+                    }else{
+                      print(dim(Xuse2))
+                      #debug(cova)
+                      c = cova(Xuse2)
+                      #undebug(cova)
+                      WkB[1, bb] <- WkB[1, bb] + sum(diag(c)) * 
+                        (length(pp2[pp2 == zz]) - 1)/(dim(X)[1] - 
+                        ClassNr)
+                    }
+                  }
+                  if(exists("c") == FALSE){
+                    print("there was a 1D vector, skipping")
+                    next
                   }
                 }
                 if (ClassNr == 1) 
@@ -1403,7 +1426,7 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
 
  for (nc in min_nc:max_nc)
  {  
-      
+    print(paste("nc is", nc))  
 	   if (any(method == 1) || (method == 2) || (method == 3) || (method == 4) || 
 		  (method == 5) || (method == 6) || (method == 7)||(method == 9)) 
       {
@@ -2212,12 +2235,10 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
  if (indice < 31)
  {
      res <- res[,c(indice)]
-        
      if (indice == 14) { resCritical <- resCritical[,1]  }
      if (indice == 15) { resCritical <- resCritical[,2] }
      if (indice == 16) { resCritical <- resCritical[,3] }
      if (indice == 20) { resCritical <- resCritical[,4] }        
-   
  }
 
  if (indice == 31) 
@@ -2246,10 +2267,7 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
 			"Duda","PseudoT2", "Beale", "Ratkowsky", "Ball", "PtBiserial",
 			"Gap", "Frey", "McClain", "Gamma", "Gplus", "Tau", "Dunn", 
       "Hubert", "SDindex", "Dindex", "SDbw")))
-   }
- else
-  {
-    
+   }else{
     results <- c(nc.KL, indice.KL, nc.CH, indice.CH, nc.Hartigan, indice.Hartigan, nc.CCC, indice.CCC, nc.Scott, indice.Scott,
 		nc.Marriot, indice.Marriot, nc.TrCovW, indice.TrCovW, nc.TraceW, indice.TraceW, nc.Friedman, indice.Friedman, 
     nc.Rubin, indice.Rubin, nc.cindex, indice.cindex, nc.DB, indice.DB, nc.Silhouette, indice.Silhouette,
@@ -2263,7 +2281,6 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
 		"TraceW", "Friedman", "Rubin", "Cindex", "DB", "Silhouette",
 		 "Duda","PseudoT2", "Beale", "Ratkowsky", "Ball", "PtBiserial",
 		"Frey", "McClain", "Dunn", 		"Hubert", "SDindex", "Dindex", "SDbw")))
-   
    }
  
    
@@ -2385,6 +2402,4 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
        
       
     return(results.final)
-    
-   
-}
+  }
