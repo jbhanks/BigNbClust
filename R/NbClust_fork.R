@@ -1242,26 +1242,26 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
                     Xuse <- X[pp == zz, ]
                     # The target of cova() needs to be coerced to a matrix to work reliably with it. While var() works for 1D vectors, cova() does not
                     ######################
-                    save(list=c(X = "X", Xuse = "Xuse", pp="pp", pp2="pp2",
-                                zz="zz", ClassNr="ClassNr"), file = "Xuse.objs.Rdata")
-                    print("test Xuse")
-                    c1 = var(as.matrix(Xuse))
-                    print(dim(c1))
-                    c2 = cova(as.matrix(Xuse))
-                    print(dim(c2))
-                    print(sum(c1 != c2))
+                    # save(list=c(X = "X", Xuse = "Xuse", pp="pp", pp2="pp2",
+                    #             zz="zz", ClassNr="ClassNr"), file = "Xuse.objs.Rdata")
+                    # print("test Xuse")
+                    # c1 = var(as.matrix(Xuse))
+                    # print(dim(c1))
+                    # c2 = cova(as.matrix(Xuse))
+                    # print(dim(c2))
+                    # print(sum(c1 != c2))
                     #######################
                     Wk0 <- Wk0 + sum(diag(cova(as.matrix(Xuse)))) * (length(pp[pp == 
                                                                      zz]) - 1)/(dim(X)[1] - ClassNr)
                     Xuse2 <- Xnew[pp2 == zz, ]
                     ######################
                   
-                    print("test Xuse2")
-                    c1 = var(as.matrix(Xuse2))
-                    print(dim(c1))
-                    c2 = cova(as.matrix(Xuse2))
-                    print(dim(c2))
-                    print(sum(c1 != c2))
+                    # print("test Xuse2")
+                    # c1 = var(as.matrix(Xuse2))
+                    # print(dim(c1))
+                    # c2 = cova(as.matrix(Xuse2))
+                    # print(dim(c2))
+                    # print(sum(c1 != c2))
                     #######################
                     WkB[1, bb] <- WkB[1, bb] + sum(diag(cova(as.matrix(Xuse2)))) * 
                       (length(pp2[pp2 == zz]) - 1)/(dim(X)[1] - 
@@ -1291,19 +1291,18 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
                 if (ClassNr > 1) {
                   for (zz in (1:ClassNr)) {
                     Xuse2 <- Xnew[pp2 == zz, ]
-                    WkB[1, bb] <- WkB[1, bb] + sum(diag(var(Xuse2))) * 
+                    WkB[1, bb] <- WkB[1, bb] + sum(diag(cova(as.matrix(Xuse2)))) * 
                       length(pp2[pp2 == zz])/(dim(X)[1] - 
                                                 ClassNr)
                   }
                 }
                 if (ClassNr == 1) {
-                  WkB[1, bb] <- sum(diag(var(Xnew)))
+                  WkB[1, bb] <- sum(diag(cova(as.matrix(Xnew))))
                 }
             }
         }
         Sgap <- mean(log(WkB[1, ])) - log(Wk0)
-        Sdgap <- sqrt(1 + 1/B) * sqrt(var(log(WkB[1, ]))) * sqrt((B - 
-            1)/B)
+        Sdgap <- sqrt(1 + 1/B) * sqrt(cova(as.matrix(log(WkB[1, ])))) * sqrt((B - 1)/B)
         resul <- list(Sgap = Sgap, Sdgap = Sdgap)
         print("finished resul for GAP")
         return(resul)
