@@ -1240,30 +1240,30 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
                   for (zz in (1:ClassNr)) {
                     print(paste("zz is", zz, "of", ClassNr))
                     Xuse <- X[pp == zz, ]
-                    # browser ()
+                    # The target of cova() needs to be coerced to a matrix to work reliably with it. While var() works for 1D vectors, cova() does not
                     ######################
                     save(list=c(X = "X", Xuse = "Xuse", pp="pp", pp2="pp2",
                                 zz="zz", ClassNr="ClassNr"), file = "Xuse.objs.Rdata")
                     print("test Xuse")
-                    c1 = var(Xuse)
+                    c1 = var(as.matrix(Xuse))
                     print(dim(c1))
-                    c2 = cova(Xuse)
+                    c2 = cova(as.matrix(Xuse))
                     print(dim(c2))
                     print(sum(c1 != c2))
                     #######################
-                    Wk0 <- Wk0 + sum(diag(cova(Xuse))) * (length(pp[pp == 
+                    Wk0 <- Wk0 + sum(diag(cova(as.matrix(Xuse)))) * (length(pp[pp == 
                                                                      zz]) - 1)/(dim(X)[1] - ClassNr)
                     Xuse2 <- Xnew[pp2 == zz, ]
                     ######################
                   
                     print("test Xuse2")
-                    c1 = var(Xuse2)
+                    c1 = var(as.matrix(Xuse2))
                     print(dim(c1))
-                    c2 = cova(Xuse2)
+                    c2 = cova(as.matrix(Xuse2))
                     print(dim(c2))
                     print(sum(c1 != c2))
                     #######################
-                    WkB[1, bb] <- WkB[1, bb] + sum(diag(cova(Xuse2))) * 
+                    WkB[1, bb] <- WkB[1, bb] + sum(diag(cova(as.matrix(Xuse2)))) * 
                       (length(pp2[pp2 == zz]) - 1)/(dim(X)[1] - 
                                                       ClassNr)
                   }
