@@ -1240,40 +1240,37 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
                   for (zz in (1:ClassNr)) {
                     print(paste("zz is", zz, "of", ClassNr))
                     Xuse <- X[pp == zz, ]
-                    # browser ()
-                    ######################
-                    save(list=c(X = "X", Xuse = "Xuse", pp="pp", pp2="pp2",
-                                zz="zz", ClassNr="ClassNr"), file = "Xuse.objs.Rdata")
-                    print("test Xuse")
-                    c1 = var(Xuse)
-                    print(dim(c1))
-                    c2 = cova(Xuse)
-                    print(dim(c2))
-                    print(sum(c1 != c2))
-                    #######################
-                    Wk0 <- Wk0 + sum(diag(cova(Xuse))) * (length(pp[pp == 
-                                                                     zz]) - 1)/(dim(X)[1] - ClassNr)
+                    print(dim(Xuse))
+                    Wk0 <- Wk0 + sum(diag(var(Xuse))) * (length(pp[pp == 
+                      zz]) - 1)/(dim(X)[1] - ClassNr)
                     Xuse2 <- Xnew[pp2 == zz, ]
-                    ######################
-                  
-                    print("test Xuse2")
-                    c1 = var(Xuse2)
-                    print(dim(c1))
-                    c2 = cova(Xuse2)
-                    print(dim(c2))
-                    print(sum(c1 != c2))
-                    #######################
-                    WkB[1, bb] <- WkB[1, bb] + sum(diag(cova(Xuse2))) * 
-                      (length(pp2[pp2 == zz]) - 1)/(dim(X)[1] - 
-                                                      ClassNr)
+                    print(dim(Xuse2))
+                    #This is in here because I had problems when Xuse2 was a vector rather than a matrix.
+                    if(is.vector(Xuse2) == TRUE){
+                      print("This is a 1D vector")
+                        save(list=c(X = "X", Xuse = "Xuse", Xuse2 = "Xuse2", Xnew="Xnew", pp="pp", pp2="pp2",
+                                    zz="zz", Wk0="Wk0", ClassNr="ClassNr"), file = "Xuse.objs.Rdata")
+                      }else if(is.matrix(Xuse2) == TRUE){
+                      print(dim(Xuse2))
+                      c = cova(Xuse2)
+                      WkB[1, bb] <- WkB[1, bb] + sum(diag(c)) * 
+                        (length(pp2[pp2 == zz]) - 1)/(dim(X)[1] - 
+                        ClassNr)
+                      }
+                    if(exists("c") == FALSE){
+                      print("there was a 1D vector, skipping")
+                      next
+                  }
+
                   }
                 }
-                if (ClassNr == 1) {
+                if (ClassNr == 1) 
+                {
                   Wk0 <- sum(diag(cova(X)))
                   WkB[1, bb] <- sum(diag(cova(Xnew)))
                 }
-            }
-            if (bb > 1) {
+             }
+             if (bb > 1) {
                 if (ClassNr == length(cl)) 
                   pp2 <- 1:ClassNr
                 else if (method == "k-means")
@@ -1291,15 +1288,15 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
                 if (ClassNr > 1) {
                   for (zz in (1:ClassNr)) {
                     Xuse2 <- Xnew[pp2 == zz, ]
-                    WkB[1, bb] <- WkB[1, bb] + sum(diag(var(Xuse2))) * 
-                      length(pp2[pp2 == zz])/(dim(X)[1] - 
-                                                ClassNr)
+                    WkB[1, bb] <- WkB[1, bb] + sum(diag(cova(Xuse2))) * 
+                      length(pp2[pp2 == zz])/(dim(X)[1] - ClassNr)
                   }
                 }
                 if (ClassNr == 1) {
-                  WkB[1, bb] <- sum(diag(var(Xnew)))
+                  WkB[1, bb] <- sum(diag(cova(Xnew)))
                 }
-            }
+             }
+            print(paste("finished ", bb))
         }
         Sgap <- mean(log(WkB[1, ])) - log(Wk0)
         Sdgap <- sqrt(1 + 1/B) * sqrt(var(log(WkB[1, ]))) * sqrt((B - 
