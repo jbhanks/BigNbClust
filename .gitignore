@@ -1,3 +1,5 @@
 R/*.out
 R/*.Rdata
 R/nbclust_test_data.R
+R/*_testing.R
+R/*_old.R

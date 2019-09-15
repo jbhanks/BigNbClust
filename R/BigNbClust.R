@@ -1,10 +1,8 @@
-NbC <-function(data = NULL, diss=NULL, distance ="euclidean", min.nc=2, max.nc=15, method =NULL, index = "all", alphaBeale = 0.1)
+BigNB <-function(data = NULL, diss=NULL, distance ="euclidean", min.nc=2, max.nc=15, method =NULL, index = "all", alphaBeale = 0.1, force_positive_eig = FALSE)
   {
   require(Rfast)
   require(propagate)
   require(fastcluster)
-  print("starting NbCluster!")
-  print(dim(data))
     x<-0
     min_nc <- min.nc
     max_nc <- max.nc
@@ -64,8 +62,11 @@ NbC <-function(data = NULL, diss=NULL, distance ="euclidean", min.nc=2, max.nc=1
       nn <- numberObsAfter <- dim(jeu)[1]
       pp <- dim(jeu)[2]    
       TT <- t(jeu)%*%jeu   
-      sizeEigenTT <- length(hd.eigen(TT)$vectors)
-      eigenValues <- hd.eigen(TT/(nn-1))$vectors
+      sizeEigenTT <- length(hd.eigen(TT, vectors = TRUE)$vectors)
+      eigenValues <- hd.eigen(TT/(nn-1), vectors = TRUE)$vectors
+      print(sum(eigenValues < 0))
+      print(sum(is.na(eigenValues)))
+      print(min(eigenValues[eigenValues < 0]))
       
       # Only for indices using vv : CCC, Scott, marriot, tracecovw, tracew, friedman, rubin
       
@@ -73,9 +74,13 @@ NbC <-function(data = NULL, diss=NULL, distance ="euclidean", min.nc=2, max.nc=1
       {
         for (i in 1:sizeEigenTT) 
         {
-          if (eigenValues[i] < 0) {
+          if (eigenValues[i] < 0 && force_positive_eig == FALSE){
+            print(i)
+            browser()
             #cat(paste("There are only", numberObsAfter,"nonmissing observations out of a possible", numberObsBefore ,"observations."))
             stop("The TSS matrix is indefinite. There must be too many missing values. The index cannot be calculated.")
+          }else if(eigenValues[i] < 0 && force_positive_eig == TRUE){
+            eigenValues[i] <- 0
           } 
         }
         s1 <- sqrt(eigenValues)
@@ -142,7 +147,6 @@ if(is.null(diss))
      {
     		md <- Dist(jeu, method="minkowski")	
 	   }
-   print(dim(md))
    if (distanceM == 7) 
     {		  
      stop("dissimilarity matrix and distance are both NULL")		
@@ -1215,7 +1219,6 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
         Wk0 <- 0
         WkB <- matrix(0, 1, B)
         for (bb in (1:B)) {
-          print(paste("WkB iteration is", as.character(bb), "of", as.character(B)))
             if (reference.distribution == "unif") 
                 Xnew <- apply(X, 2, simgap)
             else if (reference.distribution == "pc") 
@@ -1238,39 +1241,21 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
                 else stop("Wrong clustering method")
                 if (ClassNr > 1) {
                   for (zz in (1:ClassNr)) {
-                    print(paste("zz is", zz, "of", ClassNr))
                     Xuse <- X[pp == zz, ]
-                    print(dim(Xuse))
-                    Wk0 <- Wk0 + sum(diag(var(Xuse))) * (length(pp[pp == 
-                      zz]) - 1)/(dim(X)[1] - ClassNr)
+                    Wk0 <- Wk0 + sum(diag(cova(as.matrix(Xuse)))) * (length(pp[pp == 
+                                                                     zz]) - 1)/(dim(X)[1] - ClassNr)
                     Xuse2 <- Xnew[pp2 == zz, ]
-                    print(dim(Xuse2))
-                    #This is in here because I had problems when Xuse2 was a vector rather than a matrix.
-                    if(is.vector(Xuse2) == TRUE){
-                      print("This is a 1D vector")
-                        save(list=c(X = "X", Xuse = "Xuse", Xuse2 = "Xuse2", Xnew="Xnew", pp="pp", pp2="pp2",
-                                    zz="zz", Wk0="Wk0", ClassNr="ClassNr"), file = "Xuse.objs.Rdata")
-                      }else if(is.matrix(Xuse2) == TRUE){
-                      print(dim(Xuse2))
-                      c = cova(Xuse2)
-                      WkB[1, bb] <- WkB[1, bb] + sum(diag(c)) * 
-                        (length(pp2[pp2 == zz]) - 1)/(dim(X)[1] - 
-                        ClassNr)
-                      }
-                    if(exists("c") == FALSE){
-                      print("there was a 1D vector, skipping")
-                      next
-                  }
-
+                    WkB[1, bb] <- WkB[1, bb] + sum(diag(cova(as.matrix(Xuse2)))) * 
+                      (length(pp2[pp2 == zz]) - 1)/(dim(X)[1] - 
+                                                      ClassNr)
                   }
                 }
-                if (ClassNr == 1) 
-                {
+                if (ClassNr == 1) {
                   Wk0 <- sum(diag(cova(X)))
                   WkB[1, bb] <- sum(diag(cova(Xnew)))
                 }
-             }
-             if (bb > 1) {
+            }
+            if (bb > 1) {
                 if (ClassNr == length(cl)) 
                   pp2 <- 1:ClassNr
                 else if (method == "k-means")
@@ -1288,21 +1273,19 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
                 if (ClassNr > 1) {
                   for (zz in (1:ClassNr)) {
                     Xuse2 <- Xnew[pp2 == zz, ]
-                    WkB[1, bb] <- WkB[1, bb] + sum(diag(cova(Xuse2))) * 
-                      length(pp2[pp2 == zz])/(dim(X)[1] - ClassNr)
+                    WkB[1, bb] <- WkB[1, bb] + sum(diag(cova(as.matrix(Xuse2)))) * 
+                      length(pp2[pp2 == zz])/(dim(X)[1] - 
+                                                ClassNr)
                   }
                 }
                 if (ClassNr == 1) {
-                  WkB[1, bb] <- sum(diag(cova(Xnew)))
+                  WkB[1, bb] <- sum(diag(cova(as.matrix(Xnew))))
                 }
-             }
-            print(paste("finished ", bb))
+            }
         }
         Sgap <- mean(log(WkB[1, ])) - log(Wk0)
-        Sdgap <- sqrt(1 + 1/B) * sqrt(var(log(WkB[1, ]))) * sqrt((B - 
-            1)/B)
+        Sdgap <- sqrt(1 + 1/B) * sqrt(cova(as.matrix(log(WkB[1, ])))) * sqrt((B - 1)/B)
         resul <- list(Sgap = Sgap, Sdgap = Sdgap)
-        print("finished resul for GAP")
         return(resul)
     }
     if (sum(c("centroids", "medoids") == centrotypes) == 0) 
@@ -1323,7 +1306,6 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
         d, centrotypes)
     diffu <- gap - (gap2$Sgap - gap2$Sdgap)
     resul <- list(gap = gap, diffu = diffu)
-    print("got resul for gap")
     return(resul)
 
 }
@@ -1421,7 +1403,6 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
 
  for (nc in min_nc:max_nc)
  {  
-    print(paste("nc is", nc))  
 	   if (any(method == 1) || (method == 2) || (method == 3) || (method == 4) || 
 		  (method == 5) || (method == 6) || (method == 7)||(method == 9)) 
       {
@@ -1776,14 +1757,14 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
      best.nc<-nc.CH
    }
   
-  nc.CCC<-indice.CCC<-0
-  if (any(indice == 4) || (indice == 31) || (indice == 32))
-	{
-    # CCC - The maximum value accross the hierarchy levels is used to indicate the optimal number of clusters in data [29].
-    nc.CCC <- (min_nc:max_nc)[which.max(res[,4])]
-    indice.CCC <- max(res[,4],na.rm = TRUE)
-    best.nc<-nc.CCC
-  }
+#   nc.CCC<-indice.CCC<-0
+#   if (any(indice == 4) || (indice == 31) || (indice == 32))
+# 	{
+#     # CCC - The maximum value accross the hierarchy levels is used to indicate the optimal number of clusters in data [29].
+#     nc.CCC <- (min_nc:max_nc)[which.max(res[,4])]
+#     indice.CCC <- max(res[,4],na.rm = TRUE)
+#     best.nc<-nc.CCC
+#   }
     
   nc.DB<-indice.DB<-0 
   if (any(indice == 12) || (indice == 31) || (indice == 32)) 
@@ -2095,60 +2076,60 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
       best.nc<-nc.cindex
     }  
   
-  nc.Scott<-indice.Scott<-0
-  if (any(indice == 5) || (indice == 31) || (indice == 32))
-	{
- 	# SCOTT - The maximum difference between hierarchy levels was used to suggest the correct number of partitions [29].
-	 nc.Scott <- DiffLev[,1][which.max(DiffLev[,3])]
-	 indice.Scott <- max(DiffLev[,3],na.rm = TRUE)
-   best.nc<-nc.Scott
-  }
-  
-  nc.Marriot<-indice.Marriot<-0
-  if (any(indice == 6) || (indice == 31) || (indice == 32))
-	{
-	# MARRIOT - The maximum difference between successive levels was used to determine the best partition level [29].
-	 nc.Marriot <- DiffLev[,1][which.max(DiffLev[,4])]
-	 round(nc.Marriot, digits=1)
-	 indice.Marriot <- max(DiffLev[,4],na.rm = TRUE)
-   best.nc<-nc.Marriot
-  }
-  
-  nc.TrCovW<-indice.TrCovW<-0
-  if (any(indice == 7) || (indice == 31) || (indice == 32))
-	{
-	nc.TrCovW <- DiffLev[,1][which.max(DiffLev[,5])]
-	indice.TrCovW <- max(DiffLev[,5],na.rm = TRUE)
-	best.nc<-nc.TrCovW
-  }
-  
-  
-  nc.TraceW<-indice.TraceW<-0
-  if (any(indice == 8) || (indice == 31) || (indice == 32))
-	{
-  	# TRACE W - To determine the number of clusters in the data, maximum difference scores were used [29].
-	  nc.TraceW <- DiffLev[,1][which.max(DiffLev[,6])]
-  	indice.TraceW <- max(DiffLev[,6],na.rm = TRUE)
-	  best.nc<-nc.TraceW
-   }
-   
-  nc.Friedman<-indice.Friedman<-0
-  if (any(indice == 9) || (indice == 31) || (indice == 32))
-	{
-  	# FRIEDMAN - The maximum difference in values of trace W-1B criterion was used to indicate the optimal number of clusters [29].
-  	nc.Friedman <- DiffLev[,1][which.max(DiffLev[,7])]
-  	indice.Friedman <- max(DiffLev[,7],na.rm = TRUE)
-  	best.nc<-nc.Friedman
-	}
-	
-	nc.Rubin<-indice.Rubin<-0
-  if (any(indice == 10) || (indice == 31) || (indice == 32))
-	{
-	  # RUBIN - The difference between levels was used [29].
-	  nc.Rubin <- DiffLev[,1][which.min(DiffLev[,8])]
-	  indice.Rubin <- min(DiffLev[,8],na.rm = TRUE)
-	  best.nc<-nc.Rubin
-  }
+#   nc.Scott<-indice.Scott<-0
+#   if (any(indice == 5) || (indice == 31) || (indice == 32))
+# 	{
+#  	# SCOTT - The maximum difference between hierarchy levels was used to suggest the correct number of partitions [29].
+# 	 nc.Scott <- DiffLev[,1][which.max(DiffLev[,3])]
+# 	 indice.Scott <- max(DiffLev[,3],na.rm = TRUE)
+#    best.nc<-nc.Scott
+#   }
+#   
+#   nc.Marriot<-indice.Marriot<-0
+#   if (any(indice == 6) || (indice == 31) || (indice == 32))
+# 	{
+# 	# MARRIOT - The maximum difference between successive levels was used to determine the best partition level [29].
+# 	 nc.Marriot <- DiffLev[,1][which.max(DiffLev[,4])]
+# 	 round(nc.Marriot, digits=1)
+# 	 indice.Marriot <- max(DiffLev[,4],na.rm = TRUE)
+#    best.nc<-nc.Marriot
+#   }
+#   
+#   nc.TrCovW<-indice.TrCovW<-0
+#   if (any(indice == 7) || (indice == 31) || (indice == 32))
+# 	{
+# 	nc.TrCovW <- DiffLev[,1][which.max(DiffLev[,5])]
+# 	indice.TrCovW <- max(DiffLev[,5],na.rm = TRUE)
+# 	best.nc<-nc.TrCovW
+#   }
+#   
+#   
+#   nc.TraceW<-indice.TraceW<-0
+#   if (any(indice == 8) || (indice == 31) || (indice == 32))
+# 	{
+#   	# TRACE W - To determine the number of clusters in the data, maximum difference scores were used [29].
+# 	  nc.TraceW <- DiffLev[,1][which.max(DiffLev[,6])]
+#   	indice.TraceW <- max(DiffLev[,6],na.rm = TRUE)
+# 	  best.nc<-nc.TraceW
+#    }
+#    
+#   nc.Friedman<-indice.Friedman<-0
+#   if (any(indice == 9) || (indice == 31) || (indice == 32))
+# 	{
+#   	# FRIEDMAN - The maximum difference in values of trace W-1B criterion was used to indicate the optimal number of clusters [29].
+#   	nc.Friedman <- DiffLev[,1][which.max(DiffLev[,7])]
+#   	indice.Friedman <- max(DiffLev[,7],na.rm = TRUE)
+#   	best.nc<-nc.Friedman
+# 	}
+# 	
+# 	nc.Rubin<-indice.Rubin<-0
+#   if (any(indice == 10) || (indice == 31) || (indice == 32))
+# 	{
+# 	  # RUBIN - The difference between levels was used [29].
+# 	  nc.Rubin <- DiffLev[,1][which.min(DiffLev[,8])]
+# 	  indice.Rubin <- min(DiffLev[,8],na.rm = TRUE)
+# 	  best.nc<-nc.Rubin
+#   }
   
   nc.Ball<-indice.Ball<-0
   if (any(indice == 18) || (indice == 31) || (indice == 32))
