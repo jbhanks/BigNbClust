@@ -437,7 +437,6 @@ Index.Hubert<-function(x, cl)
       meanP<-mean(P)
       variance.matrix <- numeric(0)
       md <- dist(x, method="euclidean")
-      browser()
       for(j in 1:n) 
         variance.matrix[j]=cova(as.matrix(P[,j]))*(n-1)/n
       varP<-sqrt(variance.matrix %*% variance.matrix)
@@ -1472,57 +1471,64 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
   if ((any(indice == 4) || (indice == 31) || (indice == 32) ) && TSSindefinite == FALSE)
 	{    	  
 	  res[nc-min_nc+1,4] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$ccc
-  }else{
-    res[nc-min_nc+1,4] <- "test not performed"
-	}
+  }
+# 	else{
+#     res[nc-min_nc+1,4] <- NULL
+# 	}
 
   ########### Scott and Symons - 5e colonne de res ############
 	if ((any(indice == 5) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{     	  
 	  res[nc-min_nc+1,5] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$scott
-	}else{
-	  res[nc-min_nc+1,5] <- "test not performed"
 	}
+	# else{
+	#   res[nc-min_nc+1,5] <- NULL
+	# }
 
 	########### Marriot - 6e colonne de res ############
 	if ((any(indice == 6) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{   	  
 	  res[nc-min_nc+1,6] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$marriot
-	}else{
-	  res[nc-min_nc+1,6] <- "test not performed"
-	}	
+	}
+	# else{
+	#   res[nc-min_nc+1,6] <- NULL
+	# }	
 	
 	########### Trace Cov W - 7e colonne de res ############
 	if (any((indice == 7) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{   	 
 	  res[nc-min_nc+1,7] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$trcovw	  
-	}else{
-	  res[nc-min_nc+1,7] <- "test not performed"
 	}
+	# else{
+	#   res[nc-min_nc+1,7] <- NULL
+	# }
 
   ########### Trace W - 8e colonne de res ############
 	if ((any(indice == 8) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{  	  
 	  res[nc-min_nc+1,8] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$tracew
-	}else{
-	  res[nc-min_nc+1,8] <- "test not performed"
 	}
+	# else{
+	#   res[nc-min_nc+1,8] <- NULL
+	# }
 	
 	########### Friedman - 9e colonne de res ############
  	if ((any(indice == 9) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{     	  
 	  res[nc-min_nc+1,9] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$friedman
- 	}else{
- 	  res[nc-min_nc+1,9] <- "test not performed"
  	}
+# 	else{
+#  	  res[nc-min_nc+1,9] <- NULL
+#  	}
           
   ########### Rubin - 10e colonne de res ############
    if ((any(indice == 10) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{     	  
     res[nc-min_nc+1,10] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$rubin
-   }else{
-     res[nc-min_nc+1,10] <- "test not performed"
    }
+# 	else{
+#      res[nc-min_nc+1,10] <- NULL
+#    }
                     
  #################Cleanup####################
 	# if(exists(TT)){
@@ -1705,7 +1711,6 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
      ########### Indices.Hubert - 27e colonne de res ############
      if (any(indice == 27 ) || (indice == 31) || (indice == 32))
 	   {
-       browser()
 	     res[nc-min_nc+1,27] <- Index.Hubert(jeu, cl1)	
 	   }	 
 	   
@@ -2018,7 +2023,8 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
        for (nc3 in min_nc:max_nc)      
       {
         if (nc3==min_nc)
-        {    
+        {
+          browser()
 	       DiffLev[nc3-min_nc+1,2] <- abs(res[nc3-min_nc+1,3]-NA)   # Hartigan
 	       DiffLev[nc3-min_nc+1,3] <- abs(res[nc3-min_nc+1,5]-NA)   #Scott
 	       DiffLev[nc3-min_nc+1,4] <- abs(res[nc3-min_nc+1,6]-NA)   # Marriot
@@ -2103,7 +2109,7 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
 	 indice.Scott <- max(DiffLev[,3],na.rm = TRUE)
    best.nc<-nc.Scott
   }else{
-    best.nc <- "test not performed"
+    best.nc <- NULL
   }
 
   nc.Marriot<-indice.Marriot<-0
@@ -2115,7 +2121,7 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
 	 indice.Marriot <- max(DiffLev[,4],na.rm = TRUE)
    best.nc<-nc.Marriot
   }else{
-    best.nc <- "test not performed"
+    best.nc <- NULL
   }
 
   nc.TrCovW<-indice.TrCovW<-0
@@ -2125,7 +2131,7 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
 	indice.TrCovW <- max(DiffLev[,5],na.rm = TRUE)
 	best.nc<-nc.TrCovW
   }else{
-    best.nc <- "test not performed"
+    best.nc <- NULL
   }
 
 
@@ -2137,7 +2143,7 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
   	indice.TraceW <- max(DiffLev[,6],na.rm = TRUE)
 	  best.nc<-nc.TraceW
   }else{
-    best.nc <- "test not performed"
+    best.nc <- NULL
   }
 
   nc.Friedman<-indice.Friedman<-0
@@ -2148,7 +2154,7 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
   	indice.Friedman <- max(DiffLev[,7],na.rm = TRUE)
   	best.nc<-nc.Friedman
   }else{
-    best.nc <- "test not performed"
+    best.nc <- NULL
   }
 
 	nc.Rubin<-indice.Rubin<-0
@@ -2159,7 +2165,7 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
 	  indice.Rubin <- min(DiffLev[,8],na.rm = TRUE)
 	  best.nc<-nc.Rubin
   }else{
-    best.nc <- "test not performed"
+    best.nc <- NULL
   }
   
   nc.Ball<-indice.Ball<-0
