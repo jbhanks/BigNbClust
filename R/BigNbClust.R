@@ -1,4 +1,4 @@
-BigNB <-function(data = NULL, diss=NULL, distance ="euclidean", min.nc=2, max.nc=15, method =NULL, index = "all", alphaBeale = 0.1, force_positive_eig = FALSE)
+BigNB <-function(data = NULL, diss=NULL, distance ="euclidean", min.nc=2, max.nc=15, method =NULL, index = "all", alphaBeale = 0.1)
   {
   require(Rfast)
   require(propagate)
@@ -55,13 +55,14 @@ BigNB <-function(data = NULL, diss=NULL, distance ="euclidean", min.nc=2, max.nc
     else
     {
       jeu1 <- as.matrix(data)
-      rm(data)
+      #rm(data)
       numberObsBefore <- dim(jeu1)[1]
       jeu <- na.omit(jeu1) # returns the object with incomplete cases removed
       rm(jeu1)
       nn <- numberObsAfter <- dim(jeu)[1]
       pp <- dim(jeu)[2]    
-      TT <- t(jeu)%*%jeu   
+      TT <- t(jeu)%*%jeu
+      save(data, TT, nn, pp, file = "TT.rdata")
       sizeEigenTT <- length(hd.eigen(TT, vectors = TRUE)$vectors)
       eigenValues <- hd.eigen(TT/(nn-1), vectors = TRUE)$vectors
       print(sum(eigenValues < 0))
@@ -71,30 +72,30 @@ BigNB <-function(data = NULL, diss=NULL, distance ="euclidean", min.nc=2, max.nc
       # Only for indices using vv : CCC, Scott, marriot, tracecovw, tracew, friedman, rubin
       
       if (any(indice == 4) || (indice == 5) || (indice == 6) || (indice == 7) || (indice == 8) || (indice == 9) || (indice == 10) || (indice == 31) || (indice == 32))
-      {
+      {if(sum(is.na(eigenValues)) > 0){
+        TSSindefinite = TRUE
+        print("NAs detected in eigenvalues")
+        }else{
         for (i in 1:sizeEigenTT) 
         {
-          if (eigenValues[i] < 0 && force_positive_eig == FALSE){
-            print(i)
-            browser()
-            #cat(paste("There are only", numberObsAfter,"nonmissing observations out of a possible", numberObsBefore ,"observations."))
-            stop("The TSS matrix is indefinite. There must be too many missing values. The index cannot be calculated.")
-          }else if(eigenValues[i] < 0 && force_positive_eig == TRUE){
-            eigenValues[i] <- 0
+          if (is.na(eigenValues[i]) == TRUE){
+            print("The TSS matrix is indefinite. There must be too many missing values. Some indices will not be calculated.")
+            TSSindefinite = TRUE
+          }else{
+            TSSindefinite = FALSE
+            s1 <- sqrt(eigenValues)
+            rm(eigenValues)
+            ss <- rep(1,sizeEigenTT)
+            for (i in 1:sizeEigenTT) 
+            {
+              if (s1[i]!=0) 
+                ss[i]=s1[i]
+            }
+            vv <- prod(ss)
           } 
         }
-        s1 <- sqrt(eigenValues)
-        rm(eigenValues)
-        ss <- rep(1,sizeEigenTT)
-        for (i in 1:sizeEigenTT) 
-        {
-          if (s1[i]!=0) 
-            ss[i]=s1[i]
-        }
-        vv <- prod(ss)
-        rm(s1)
+      }
       } 
-            
     }
     
     
@@ -1017,9 +1018,9 @@ Indices.Traces <- function(data, d, clall, index = "all")
         vecallindex[2] <- indice.ch(x,cl=clall[,2],d)
     if (any(indice == 3) || (indice == 6)) 
         vecallindex[3] <- indice.hart(x,clall,d)
-    if (any(indice == 4) || (indice == 6)) 
+    if ((any(indice == 4) || (indice == 6)) && TSSindefinite == FALSE) 
         vecallindex[4] <- indice.ratkowsky(x,cl=cl1, d)
-    if (any(indice == 5) || (indice == 6)) 
+    if ((any(indice == 5) || (indice == 6)) && TSSindefinite == FALSE) 
         vecallindex[5] <- indice.ball(x,cl=cl1,d)
     names(vecallindex) <- c("kl", "ch", "hart", "ratkowsky", "ball")
     if (indice < 6) 
@@ -1467,46 +1468,60 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
 	} 
   
    ########### Cubic Clustering Criterion-CCC  - 4e colonne de res ############
-  if (any(indice == 4) || (indice == 31) || (indice == 32))
+  if ((any(indice == 4) || (indice == 31) || (indice == 32) ) && TSSindefinite == FALSE)
 	{    	  
 	  res[nc-min_nc+1,4] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$ccc
+  }else{
+    res[nc-min_nc+1,4] <- "test not performed"
 	}
 
   ########### Scott and Symons - 5e colonne de res ############
-	if (any(indice == 5) || (indice == 31) || (indice == 32))
+	if ((any(indice == 5) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{     	  
 	  res[nc-min_nc+1,5] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$scott
+	}else{
+	  res[nc-min_nc+1,5] <- "test not performed"
 	}
 
 	########### Marriot - 6e colonne de res ############
-	if (any(indice == 6) || (indice == 31) || (indice == 32))
+	if ((any(indice == 6) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{   	  
 	  res[nc-min_nc+1,6] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$marriot
+	}else{
+	  res[nc-min_nc+1,6] <- "test not performed"
 	}	
 	
 	########### Trace Cov W - 7e colonne de res ############
-	if (any(indice == 7) || (indice == 31) || (indice == 32))
+	if (any((indice == 7) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{   	 
 	  res[nc-min_nc+1,7] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$trcovw	  
+	}else{
+	  res[nc-min_nc+1,7] <- "test not performed"
 	}
 
   ########### Trace W - 8e colonne de res ############
-	if (any(indice == 8) || (indice == 31) || (indice == 32))
+	if ((any(indice == 8) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{  	  
 	  res[nc-min_nc+1,8] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$tracew
+	}else{
+	  res[nc-min_nc+1,8] <- "test not performed"
 	}
 	
 	########### Friedman - 9e colonne de res ############
- 	if (any(indice == 9) || (indice == 31) || (indice == 32))
+ 	if ((any(indice == 9) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{     	  
 	  res[nc-min_nc+1,9] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$friedman
-	}
+ 	}else{
+ 	  res[nc-min_nc+1,9] <- "test not performed"
+ 	}
           
   ########### Rubin - 10e colonne de res ############
-   if (any(indice == 10) || (indice == 31) || (indice == 32))
+   if ((any(indice == 10) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
 	{     	  
     res[nc-min_nc+1,10] <- Indices.WBT(x=jeu, cl=cl1, P=TT,s=ss,vv=vv)$rubin
-	}
+   }else{
+     res[nc-min_nc+1,10] <- "test not performed"
+   }
                     
  #################Cleanup####################
 	# if(exists(TT)){
@@ -1757,14 +1772,16 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
      best.nc<-nc.CH
    }
   
-#   nc.CCC<-indice.CCC<-0
-#   if (any(indice == 4) || (indice == 31) || (indice == 32))
-# 	{
-#     # CCC - The maximum value accross the hierarchy levels is used to indicate the optimal number of clusters in data [29].
-#     nc.CCC <- (min_nc:max_nc)[which.max(res[,4])]
-#     indice.CCC <- max(res[,4],na.rm = TRUE)
-#     best.nc<-nc.CCC
-#   }
+  nc.CCC<-indice.CCC<-0
+  if ((any(indice == 4) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
+	{
+    # CCC - The maximum value accross the hierarchy levels is used to indicate the optimal number of clusters in data [29].
+    nc.CCC <- (min_nc:max_nc)[which.max(res[,4])]
+    indice.CCC <- max(res[,4],na.rm = TRUE)
+    best.nc<-nc.CCC
+  }else if((any(indice == 4) || (indice == 31) || (indice == 32)) && TSSindefinite == TRUE){
+    best.nc<-"not calculated"
+  }
     
   nc.DB<-indice.DB<-0 
   if (any(indice == 12) || (indice == 31) || (indice == 32)) 
@@ -2076,60 +2093,72 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
       best.nc<-nc.cindex
     }  
   
-#   nc.Scott<-indice.Scott<-0
-#   if (any(indice == 5) || (indice == 31) || (indice == 32))
-# 	{
-#  	# SCOTT - The maximum difference between hierarchy levels was used to suggest the correct number of partitions [29].
-# 	 nc.Scott <- DiffLev[,1][which.max(DiffLev[,3])]
-# 	 indice.Scott <- max(DiffLev[,3],na.rm = TRUE)
-#    best.nc<-nc.Scott
-#   }
-#   
-#   nc.Marriot<-indice.Marriot<-0
-#   if (any(indice == 6) || (indice == 31) || (indice == 32))
-# 	{
-# 	# MARRIOT - The maximum difference between successive levels was used to determine the best partition level [29].
-# 	 nc.Marriot <- DiffLev[,1][which.max(DiffLev[,4])]
-# 	 round(nc.Marriot, digits=1)
-# 	 indice.Marriot <- max(DiffLev[,4],na.rm = TRUE)
-#    best.nc<-nc.Marriot
-#   }
-#   
-#   nc.TrCovW<-indice.TrCovW<-0
-#   if (any(indice == 7) || (indice == 31) || (indice == 32))
-# 	{
-# 	nc.TrCovW <- DiffLev[,1][which.max(DiffLev[,5])]
-# 	indice.TrCovW <- max(DiffLev[,5],na.rm = TRUE)
-# 	best.nc<-nc.TrCovW
-#   }
-#   
-#   
-#   nc.TraceW<-indice.TraceW<-0
-#   if (any(indice == 8) || (indice == 31) || (indice == 32))
-# 	{
-#   	# TRACE W - To determine the number of clusters in the data, maximum difference scores were used [29].
-# 	  nc.TraceW <- DiffLev[,1][which.max(DiffLev[,6])]
-#   	indice.TraceW <- max(DiffLev[,6],na.rm = TRUE)
-# 	  best.nc<-nc.TraceW
-#    }
-#    
-#   nc.Friedman<-indice.Friedman<-0
-#   if (any(indice == 9) || (indice == 31) || (indice == 32))
-# 	{
-#   	# FRIEDMAN - The maximum difference in values of trace W-1B criterion was used to indicate the optimal number of clusters [29].
-#   	nc.Friedman <- DiffLev[,1][which.max(DiffLev[,7])]
-#   	indice.Friedman <- max(DiffLev[,7],na.rm = TRUE)
-#   	best.nc<-nc.Friedman
-# 	}
-# 	
-# 	nc.Rubin<-indice.Rubin<-0
-#   if (any(indice == 10) || (indice == 31) || (indice == 32))
-# 	{
-# 	  # RUBIN - The difference between levels was used [29].
-# 	  nc.Rubin <- DiffLev[,1][which.min(DiffLev[,8])]
-# 	  indice.Rubin <- min(DiffLev[,8],na.rm = TRUE)
-# 	  best.nc<-nc.Rubin
-#   }
+  nc.Scott<-indice.Scott<-0
+  if ((any(indice == 5) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
+	{
+ 	# SCOTT - The maximum difference between hierarchy levels was used to suggest the correct number of partitions [29].
+	 nc.Scott <- DiffLev[,1][which.max(DiffLev[,3])]
+	 indice.Scott <- max(DiffLev[,3],na.rm = TRUE)
+   best.nc<-nc.Scott
+  }else{
+    best.nc <- "test not performed"
+  }
+
+  nc.Marriot<-indice.Marriot<-0
+  if ((any(indice == 6) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
+	{
+	# MARRIOT - The maximum difference between successive levels was used to determine the best partition level [29].
+	 nc.Marriot <- DiffLev[,1][which.max(DiffLev[,4])]
+	 round(nc.Marriot, digits=1)
+	 indice.Marriot <- max(DiffLev[,4],na.rm = TRUE)
+   best.nc<-nc.Marriot
+  }else{
+    best.nc <- "test not performed"
+  }
+
+  nc.TrCovW<-indice.TrCovW<-0
+  if ((any(indice == 7) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
+	{
+	nc.TrCovW <- DiffLev[,1][which.max(DiffLev[,5])]
+	indice.TrCovW <- max(DiffLev[,5],na.rm = TRUE)
+	best.nc<-nc.TrCovW
+  }else{
+    best.nc <- "test not performed"
+  }
+
+
+  nc.TraceW<-indice.TraceW<-0
+  if ((any(indice == 8) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
+	{
+  	# TRACE W - To determine the number of clusters in the data, maximum difference scores were used [29].
+	  nc.TraceW <- DiffLev[,1][which.max(DiffLev[,6])]
+  	indice.TraceW <- max(DiffLev[,6],na.rm = TRUE)
+	  best.nc<-nc.TraceW
+  }else{
+    best.nc <- "test not performed"
+  }
+
+  nc.Friedman<-indice.Friedman<-0
+  if ((any(indice == 9) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
+	{
+  	# FRIEDMAN - The maximum difference in values of trace W-1B criterion was used to indicate the optimal number of clusters [29].
+  	nc.Friedman <- DiffLev[,1][which.max(DiffLev[,7])]
+  	indice.Friedman <- max(DiffLev[,7],na.rm = TRUE)
+  	best.nc<-nc.Friedman
+  }else{
+    best.nc <- "test not performed"
+  }
+
+	nc.Rubin<-indice.Rubin<-0
+  if ((any(indice == 10) || (indice == 31) || (indice == 32)) && TSSindefinite == FALSE)
+	{
+	  # RUBIN - The difference between levels was used [29].
+	  nc.Rubin <- DiffLev[,1][which.min(DiffLev[,8])]
+	  indice.Rubin <- min(DiffLev[,8],na.rm = TRUE)
+	  best.nc<-nc.Rubin
+  }else{
+    best.nc <- "test not performed"
+  }
   
   nc.Ball<-indice.Ball<-0
   if (any(indice == 18) || (indice == 31) || (indice == 32))
