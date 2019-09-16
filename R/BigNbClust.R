@@ -296,7 +296,7 @@ Average.scattering <- function (cl, x)
      
      variance.matrix <- numeric(0)
      for(j in 1:ncol(x)) 
-        variance.matrix[j]=cova(x[,j])*(n-1)/n
+        variance.matrix[j]=cova(as.matrix(x[,j]))*(n-1)/n
 
      
       Somme.variance.clusters<-0
@@ -437,8 +437,9 @@ Index.Hubert<-function(x, cl)
       meanP<-mean(P)
       variance.matrix <- numeric(0)
       md <- dist(x, method="euclidean")
+      browser()
       for(j in 1:n) 
-        variance.matrix[j]=cova(P[,j])*(n-1)/n
+        variance.matrix[j]=cova(as.matrix(P[,j]))*(n-1)/n
       varP<-sqrt(variance.matrix %*% variance.matrix)
       
       centers.clusters<-centers(cl,x)
@@ -454,7 +455,7 @@ Index.Hubert<-function(x, cl)
       Q<- as.matrix(dist(y, method="euclidean"))
       meanQ<-mean(Q)
       for(j in 1:n) 
-        variance.matrix[j]=cova(Q[,j])*(n-1)/n
+        variance.matrix[j]=cova(as.matrix(Q[,j]))*(n-1)/n
       varQ<-sqrt(variance.matrix %*% variance.matrix)
       
       M<-n*(n-1)/2
@@ -1703,7 +1704,8 @@ Indice.Gap <- function (x, clall, reference.distribution = "unif", B = 10,
     
      ########### Indices.Hubert - 27e colonne de res ############
      if (any(indice == 27 ) || (indice == 31) || (indice == 32))
-	   {         	     
+	   {
+       browser()
 	     res[nc-min_nc+1,27] <- Index.Hubert(jeu, cl1)	
 	   }	 
 	   
